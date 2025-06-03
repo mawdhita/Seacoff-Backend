@@ -51,8 +51,16 @@ app.get('/orders', (req, res) => {
   });
 });
 
+
+
 // ✅ Pakai rute order & cart
 app.use('/api', orderRoutes);
 app.use('/api/cart', cartRoutes); // ⬅️ Tambahin ini
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Api seacoft udah jalan cuy`);
+  });
+}
 
 module.exports = app;
