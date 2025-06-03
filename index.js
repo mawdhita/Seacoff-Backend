@@ -1,11 +1,10 @@
-require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
 const db = require('./db'); // koneksi MySQL
+require('dotenv').config();
 
 const app = express();
-const port = 3001;
+const port = 8000;
 
 // Routes
 const orderRoutes = require('./routes/orderRoutes');
@@ -56,6 +55,4 @@ app.get('/orders', (req, res) => {
 app.use('/api', orderRoutes);
 app.use('/api/cart', cartRoutes); // ⬅️ Tambahin ini
 
-app.listen(port, () => {
-  console.log(`Server running di http://localhost:${port}`);
-});
+module.exports = app;
