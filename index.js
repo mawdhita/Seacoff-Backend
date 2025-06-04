@@ -12,6 +12,8 @@ const cartRoutes = require('./routes/cartRoutes'); // ⬅️ Tambahin ini
 
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
+app.use('/uploads', express.static('uploads'));
 
 // ✅ Route: Get all menu
 app.get('/menus', (req, res) => {
@@ -56,8 +58,8 @@ app.get('/orders', (req, res) => {
 
 
 // ✅ Pakai rute order & cart
-app.use('/api', orderRoutes);
-app.use('/api/cart', cartRoutes); // ⬅️ Tambahin ini
+app.use('/cart', orderRoutes);
+app.use('/cart', cartRoutes); // ⬅️ Tambahin ini
 
 app.get('/', (req, res) => {
   res.send('API Seacoft sudah jalan cuy!');
