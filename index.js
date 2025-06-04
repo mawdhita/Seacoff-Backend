@@ -82,7 +82,7 @@ app.get('/orders', async (req, res) => {
 });
 
 // Pakai route order & cart
-app.use('/api', orderRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/cart', cartRoutes);
 
 app.get('/', (req, res) => {
