@@ -1,18 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db'); // koneksi MySQL
-require('dotenv').config();
 
 const app = express();
 const port = 8000;
 
-// Routes
 const orderRoutes = require('./routes/orderRoutes');
-const cartRoutes = require('./routes/cartRoutes'); // ⬅️ Tambahin ini
+const cartRoutes = require('./routes/cartRoutes');
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Hardcoded BASE_URL (tanpa .env)
+const BASE_URL = 'https://seacoff-backend.vercel.app';
 
 // ✅ Route: Get all menu
 app.get('/menus', (req, res) => {
@@ -21,11 +22,15 @@ app.get('/menus', (req, res) => {
       console.error('Error ambil data menu:', err);
       res.status(500).json({ error: 'Gagal ambil data menu' });
     } else {
-      res.json(results);
+      const menus = results.map((menu) => ({
+        ...menu,
+        foto_menu_url: menu.foto_menu
+          ? `${BASE_URL}/uploads/${menu.foto_menu}`
+          : `${BASE_URL}/uploads/placeholder.png`,
+      }));
+      res.json(menus);
     }
-    
   });
-  
 });
 
 // ✅ Route: Get detail menu by ID
@@ -39,7 +44,14 @@ app.get('/menus/:id', (req, res) => {
     if (results.length === 0) {
       return res.status(404).json({ error: 'Menu tidak ditemukan' });
     }
-    res.json(results[0]);
+    const menu = results[0];
+    const menuWithUrl = {
+      ...menu,
+      foto_menu_url: menu.foto_menu
+        ? `${BASE_URL}/uploads/${menu.foto_menu}`
+        : `${BASE_URL}/uploads/placeholder.png`,
+    };
+    res.json(menuWithUrl);
   });
 });
 
@@ -54,14 +66,12 @@ app.get('/orders', (req, res) => {
   });
 });
 
-
-
 // ✅ Pakai rute order & cart
 app.use('/api', orderRoutes);
-app.use('/api/cart', cartRoutes); // ⬅️ Tambahin ini
+app.use('/api/cart', cartRoutes);
 
 app.get('/', (req, res) => {
-  res.send('API Seacoft sudah jalan cuy!');
+  res.send('API Seacoff sudah jalan cuy!');
 });
 
 module.exports = app;
