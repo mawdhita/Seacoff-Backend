@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const db = require('./db'); // koneksi MySQL
+const pool = require('./db');  // pool sudah pakai mysql2/promise
 
 const app = express();
 const port = 8000;
@@ -16,31 +16,27 @@ app.use(express.urlencoded({ extended: true }));
 const BASE_URL = 'https://seacoff-backend.vercel.app';
 
 // ✅ Route: Get all menu
-app.get('/menus', (req, res) => {
-  db.query('SELECT * FROM menu', (err, results) => {
-    if (err) {
-      console.error('Error ambil data menu:', err);
-      res.status(500).json({ error: 'Gagal ambil data menu' });
-    } else {
-      const menus = results.map((menu) => ({
-        ...menu,
-        foto_menu_url: menu.foto_menu
-          ? `${BASE_URL}/uploads/${menu.foto_menu}`
-          : `${BASE_URL}/uploads/placeholder.png`,
-      }));
-      res.json(menus);
-    }
-  });
+app.get('/menus', async (req, res) => {
+  try {
+    const [results] = await pool.query('SELECT * FROM menu');
+    const menus = results.map((menu) => ({
+      ...menu,
+      foto_menu_url: menu.foto_menu
+        ? `${BASE_URL}/uploads/${menu.foto_menu}`
+        : `${BASE_URL}/uploads/placeholder.png`,
+    }));
+    res.json(menus);
+  } catch (err) {
+    console.error('Error ambil data menu:', err);
+    res.status(500).json({ error: 'Gagal ambil data menu' });
+  }
 });
 
 // ✅ Route: Get detail menu by ID
-app.get('/menus/:id', (req, res) => {
+app.get('/menus/:id', async (req, res) => {
   const { id } = req.params;
-  db.query('SELECT * FROM menu WHERE id_menu = ?', [id], (err, results) => {
-    if (err) {
-      console.error('Gagal ambil detail menu:', err.sqlMessage || err);
-      return res.status(500).json({ error: 'Gagal ambil data menu' });
-    }
+  try {
+    const [results] = await pool.query('SELECT * FROM menu WHERE id_menu = ?', [id]);
     if (results.length === 0) {
       return res.status(404).json({ error: 'Menu tidak ditemukan' });
     }
@@ -52,18 +48,21 @@ app.get('/menus/:id', (req, res) => {
         : `${BASE_URL}/uploads/placeholder.png`,
     };
     res.json(menuWithUrl);
-  });
+  } catch (err) {
+    console.error('Gagal ambil detail menu:', err);
+    res.status(500).json({ error: 'Gagal ambil data menu' });
+  }
 });
 
 // ✅ Route: Get all orders
-app.get('/orders', (req, res) => {
-  db.query('SELECT * FROM orders', (err, results) => {
-    if (err) {
-      console.error('Gagal ambil data orders:', err);
-      return res.status(500).json({ error: 'Gagal ambil data orders' });
-    }
+app.get('/orders', async (req, res) => {
+  try {
+    const [results] = await pool.query('SELECT * FROM orders');
     res.json(results);
-  });
+  } catch (err) {
+    console.error('Gagal ambil data orders:', err);
+    res.status(500).json({ error: 'Gagal ambil data orders' });
+  }
 });
 
 // ✅ Pakai rute order & cart
