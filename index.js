@@ -22,7 +22,9 @@ app.get('/menus', (req, res) => {
     } else {
       res.json(results);
     }
+    
   });
+  
 });
 
 // ✅ Route: Get detail menu by ID
@@ -57,10 +59,8 @@ app.get('/orders', (req, res) => {
 app.use('/api', orderRoutes);
 app.use('/api/cart', cartRoutes); // ⬅️ Tambahin ini
 
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(port, () => {
-    console.log(`Api seacoft udah jalan cuy`);
-  });
-}
+app.get('/', (req, res) => {
+  res.send('API Seacoft sudah jalan cuy!');
+});
 
 module.exports = app;

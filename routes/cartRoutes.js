@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db'); // Koneksi ke MySQL
+const db = require('../db').default; // Koneksi ke MySQL
 
 // ✅ GET semua isi keranjang + nama menu & harga (status pending)
 router.get('/', (req, res) => {
