@@ -59,6 +59,8 @@ app.get('/orders', (req, res) => {
 app.use('/api', orderRoutes);
 app.use('/api/cart', cartRoutes); // ⬅️ Tambahin ini
 
-
+app.get('/', (req, res) => {
+  res.send('API Seacoft sudah jalan cuy!');
+});
 
 module.exports = app;
