@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const db = require('./db'); // koneksi MySQL
 require('dotenv').config();
 
@@ -12,6 +13,8 @@ const cartRoutes = require('./routes/cartRoutes'); // ⬅️ Tambahin ini
 
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
+app.use('/uploads', express.static('uploads'));
 
 // ✅ Route: Get all menu
 app.get('/menus', (req, res) => {
