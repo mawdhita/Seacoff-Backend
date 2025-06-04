@@ -51,7 +51,7 @@ app.get('/menus', async (req, res) => {
 });
 
 // Route: Get detail menu by ID
-app.get('/menus/:id', async (req, res) => {
+app.get('/DetailMenu/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const [results] = await pool.query('SELECT * FROM menu WHERE id_menu = ?', [id]);
