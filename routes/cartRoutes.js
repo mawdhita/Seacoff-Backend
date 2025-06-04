@@ -1,72 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db').default; // Koneksi ke MySQL
+const db = require('../db');
 
-// ✅ GET semua isi keranjang + nama menu & harga (status pending)
-router.get('/', (req, res) => {
-  const sql = `
-    SELECT 
-      c.id_cart, 
-      c.id_menu, 
-      m.nama_menu, 
-      m.harga, 
-      c.quantity, 
-      (m.harga * c.quantity) AS subtotal,
-      c.status,
-      c.created_at
-    FROM cart c
-    JOIN menu m ON c.id_menu = m.id_menu
-    WHERE c.status = 'pending'
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error('Gagal ambil data keranjang:', err);
-      return res.status(500).json({ error: 'Gagal ambil data keranjang' });
-    }
-    res.json(results);
-  });
-});
-
-// ✅ POST menambahkan item ke keranjang (tanpa id_user)
-router.post('/', (req, res) => {
+// Tambah item ke keranjang
+router.post('/api/cart', (req, res) => {
+  const sessionId = req.headers['x-session-id'];
   const { id_menu, quantity } = req.body;
 
-  // Validasi input
-  if (!id_menu || !quantity) {
-    return res.status(400).json({ error: 'Menu ID dan Quantity wajib diisi' });
+  if (!sessionId || !id_menu || !quantity) {
+    return res.status(400).json({ message: 'Data tidak lengkap' });
   }
 
-  // Pastikan quantity adalah angka dan lebih besar dari 0
-  if (isNaN(quantity) || quantity <= 0) {
-    return res.status(400).json({ error: 'Quantity harus angka lebih dari 0' });
-  }
-
-  const query = `
-    INSERT INTO cart (id_menu, quantity, status, created_at, updated_at) 
-    VALUES (?, ?, 'pending', NOW(), NOW())
-  `;
-
-  db.query(query, [id_menu, quantity], (err, result) => {
+  const checkCartSql = `SELECT id FROM cart WHERE session_id = ? AND id_menu = ? LIMIT 1`;
+  db.query(checkCartSql, [sessionId, id_menu], (err, results) => {
     if (err) {
-      console.error('Error menambahkan ke keranjang:', err);
-      return res.status(500).json({ error: 'Gagal menambahkan ke keranjang' });
+      console.error('Gagal cek cart:', err);
+      return res.status(500).json({ message: 'Gagal cek cart' });
     }
 
-    // Buat objek cart yang berhasil ditambahkan
-    const newCartItem = {
-      id_cart: result.insertId,
-      id_menu,
-      quantity,
-      status: 'pending',
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-
-    res.status(201).json({
-      message: 'Item berhasil ditambahkan ke keranjang',
-      data: newCartItem
-    });
+    if (results.length > 0) {
+      // Jika menu sudah ada di cart, update quantity
+      const updateCartSql = `UPDATE cart SET quantity = quantity + ?, updated_at = NOW() WHERE id = ?`;
+      db.query(updateCartSql, [quantity, results[0].id], (err2) => {
+        if (err2) {
+          console.error('Gagal update cart:', err2);
+          return res.status(500).json({ message: 'Gagal update cart' });
+        }
+        res.json({ message: 'Item di cart berhasil diupdate' });
+      });
+    } else {
+      // Jika belum ada, insert baru
+      const insertCartSql = `INSERT INTO cart (session_id, id_menu, quantity, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())`;
+      db.query(insertCartSql, [sessionId, id_menu, quantity], (err2) => {
+        if (err2) {
+          console.error('Gagal tambah cart:', err2);
+          return res.status(500).json({ message: 'Gagal tambah cart' });
+        }
+        res.status(201).json({ message: 'Item berhasil ditambahkan ke cart' });
+      });
+    }
   });
 });
 
