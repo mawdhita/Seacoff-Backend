@@ -4,7 +4,7 @@ const router = express.Router();
 const db = require('../db');
 
 // Tambah item ke keranjang
-router.post('/api/cart', (req, res) => {
+router.post('/', (req, res) => {      // <-- Hilangkan '/api/cart' di sini
   const { id_menu, quantity } = req.body;
 
   if (!id_menu || !quantity) {

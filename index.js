@@ -82,8 +82,8 @@ app.get('/orders', async (req, res) => {
 });
 
 // Pakai route order & cart
+app.use('/api/cart', cartRoutes);      // Ini udah bener
 app.use('/api/orders', orderRoutes);
-app.use('/api/cart', cartRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Seacoff sudah jalan cuy!');
