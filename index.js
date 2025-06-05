@@ -32,6 +32,8 @@ app.get('/menus', async (req, res) => {
   }
 });
 
+app.use('/uploads', express.static('uploads'));
+
 // ✅ Route: Get detail menu by ID
 app.get('/menus/:id', async (req, res) => {
   const { id } = req.params;
