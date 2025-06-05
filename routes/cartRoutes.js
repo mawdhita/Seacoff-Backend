@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // tambahkan ini!
-const cartController = require('../controllers/cartController');
 
 
 router.post('/cart', async (req, res) => {
