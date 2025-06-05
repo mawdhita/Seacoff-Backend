@@ -3,10 +3,6 @@ const router = express.Router();
 const pool = require('../db'); // tambahkan ini!
 const cartController = require('../controllers/cartController');
 
-router.get('/cart', cartController.getCart);
-router.put('/cart/:id_cart', cartController.updateCartQuantity);
-router.delete('/cart/:id_cart', cartController.deleteCartItem);
-
 
 router.post('/cart', async (req, res) => {
   try {
