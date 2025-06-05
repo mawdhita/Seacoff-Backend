@@ -74,7 +74,7 @@ app.get('/orders', async (req, res) => {
 
 app.use('/api', cartRoutes);
 
-app.use('/api', orderRoutes);
+app.use('/Api', orderRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Seacoff sudah jalan cuy!');
