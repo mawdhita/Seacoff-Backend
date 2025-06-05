@@ -12,9 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// server.js atau app.js
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.use('/uploads', express.static('uploads')); 
 
 // Hardcoded BASE_URL (tanpa .env)
 const BASE_URL = 'https://seacoff-backend.vercel.app';
