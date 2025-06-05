@@ -1,45 +1,68 @@
-// cartRoutes.js
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const db = require('../config/db');
 
-// Tambah item ke keranjang
-router.post('/', (req, res) => {      // <-- Hilangkan '/api/cart' di sini
+console.log("cartRoutes loaded");
+
+// GET /api/cart
+router.get('/', (req, res) => {
+  const sessionId = req.headers['x-session-id'];
+  if (!sessionId) return res.status(400).json({ error: 'Session ID dibutuhkan' });
+
+  const query = `
+    SELECT c.id_cart, c.id_menu, c.quantity, m.nama_menu, m.harga, m.foto_menu
+    FROM cart c
+    JOIN menu m ON c.id_menu = m.id_menu
+    WHERE c.session_id = ?
+  `;
+  db.query(query, [sessionId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Internal Server Error' });
+    res.json(results);
+  });
+});
+
+// POST /api/cart
+router.post('/', (req, res) => {
   const { id_menu, quantity } = req.body;
-
-  if (!id_menu || !quantity) {
-    return res.status(400).json({ message: 'Data tidak lengkap' });
+  const sessionId = req.headers['x-session-id'];
+  if (!id_menu || !quantity || !sessionId) {
+    return res.status(400).json({ error: 'Data tidak lengkap' });
   }
 
-  // Cek apakah item sudah ada di keranjang
-  const checkCartSql = `SELECT id FROM cart WHERE id_menu = ? LIMIT 1`;
-  db.query(checkCartSql, [id_menu], (err, results) => {
-    if (err) {
-      console.error('Gagal cek cart:', err);
-      return res.status(500).json({ message: 'Gagal cek cart' });
-    }
+  const insertQuery = `
+    INSERT INTO cart (id_menu, quantity, session_id)
+    VALUES (?, ?, ?)
+  `;
+  db.query(insertQuery, [id_menu, quantity, sessionId], (err) => {
+    if (err) return res.status(500).json({ error: 'Gagal menambahkan ke keranjang' });
+    res.status(201).json({ message: 'Item berhasil ditambahkan ke keranjang' });
+  });
+});
 
-    if (results.length > 0) {
-      // Kalau sudah ada, update quantity
-      const updateCartSql = `UPDATE cart SET quantity = quantity + ?, updated_at = NOW() WHERE id = ?`;
-      db.query(updateCartSql, [quantity, results[0].id], (err2) => {
-        if (err2) {
-          console.error('Gagal update cart:', err2);
-          return res.status(500).json({ message: 'Gagal update cart' });
-        }
-        res.json({ message: 'Item di cart berhasil diupdate' });
-      });
-    } else {
-      // Kalau belum ada, insert baru
-      const insertCartSql = `INSERT INTO cart (id_menu, quantity, created_at, updated_at) VALUES (?, ?, NOW(), NOW())`;
-      db.query(insertCartSql, [id_menu, quantity], (err2) => {
-        if (err2) {
-          console.error('Gagal tambah cart:', err2);
-          return res.status(500).json({ message: 'Gagal tambah cart' });
-        }
-        res.status(201).json({ message: 'Item berhasil ditambahkan ke cart' });
-      });
-    }
+// PUT /api/cart/:id_cart
+router.put('/:id_cart', (req, res) => {
+  const { quantity } = req.body;
+  const { id_cart } = req.params;
+  const sessionId = req.headers['x-session-id'];
+  if (!sessionId) return res.status(400).json({ error: 'Session ID dibutuhkan' });
+
+  const updateQuery = 'UPDATE cart SET quantity = ? WHERE id_cart = ? AND session_id = ?';
+  db.query(updateQuery, [quantity, id_cart, sessionId], (err) => {
+    if (err) return res.status(500).json({ error: 'DB error' });
+    res.json({ message: 'Quantity updated' });
+  });
+});
+
+// DELETE /api/cart/:id_cart
+router.delete('/:id_cart', (req, res) => {
+  const { id_cart } = req.params;
+  const sessionId = req.headers['x-session-id'];
+  if (!sessionId) return res.status(400).json({ error: 'Session ID dibutuhkan' });
+
+  const deleteQuery = 'DELETE FROM cart WHERE id_cart = ? AND session_id = ?';
+  db.query(deleteQuery, [id_cart, sessionId], (err) => {
+    if (err) return res.status(500).json({ error: 'DB error' });
+    res.json({ message: 'Item removed from cart' });
   });
 });
 
