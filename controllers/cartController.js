@@ -17,41 +17,24 @@ exports.getCart = async (req, res) => {
 };
 
 // POST item ke keranjang
-exports.addToCart = async (req, res) => {
-  const { id_menu, quantity } = req.body;
-
-  if (!id_menu || !quantity) {
-    return res.status(400).json({ error: 'id_menu dan quantity wajib diisi' });
-  }
-
+router.post('/cart', async (req, res) => {
   try {
-    // Cek apakah item sudah ada di keranjang
-    const [existing] = await pool.query(
-      'SELECT id_cart, quantity FROM cart WHERE id_menu = ?',
-      [id_menu]
+    const { id_menu, quantity } = req.body;
+    if (!id_menu || !quantity) {
+      return res.status(400).json({ error: 'id_menu dan quantity wajib diisi' });
+    }
+
+    await pool.query(
+      'INSERT INTO cart (id_menu, quantity) VALUES (?, ?)',
+      [id_menu, quantity]
     );
 
-    if (existing.length > 0) {
-      // Jika sudah ada, update quantity
-      const newQty = existing[0].quantity + quantity;
-      await pool.query(
-        'UPDATE cart SET quantity = ? WHERE id_cart = ?',
-        [newQty, existing[0].id_cart]
-      );
-      res.json({ message: 'Quantity berhasil ditambah' });
-    } else {
-      // Jika belum ada, insert baru
-      await pool.query(
-        'INSERT INTO cart (id_menu, quantity) VALUES (?, ?)',
-        [id_menu, quantity]
-      );
-      res.json({ message: 'Item berhasil ditambahkan ke keranjang' });
-    }
-  } catch (error) {
-    console.error('Gagal tambah ke keranjang:', error);
-    res.status(500).json({ error: 'Gagal tambah ke keranjang' });
+    res.status(201).json({ message: 'Berhasil menambahkan ke keranjang' });
+  } catch (err) {
+    console.error('Gagal tambah ke keranjang:', err);
+    res.status(500).json({ error: 'Gagal menambahkan ke keranjang' });
   }
-};
+});
 
 // PUT update quantity
 exports.updateCartQuantity = async (req, res) => {
