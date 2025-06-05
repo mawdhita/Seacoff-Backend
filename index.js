@@ -15,6 +15,8 @@ app.use(express.urlencoded({ extended: true }));
 // Hardcoded BASE_URL (tanpa .env)
 const BASE_URL = 'https://seacoff-backend.vercel.app';
 
+app.use('frrontend/uploads', express.static('uploads'));
+
 // ✅ Route: Get all menu
 app.get('/menus', async (req, res) => {
   try {
@@ -32,7 +34,7 @@ app.get('/menus', async (req, res) => {
   }
 });
 
-app.use('/uploads', express.static('uploads'));
+
 
 // ✅ Route: Get detail menu by ID
 app.get('/menus/:id', async (req, res) => {
