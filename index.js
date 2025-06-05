@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const pool = require('./db');  // pool sudah pakai mysql2/promise
 
+
 const app = express();
 const port = 8000;
 
@@ -17,7 +18,6 @@ app.use('/uploads', express.static('uploads'));
 // Hardcoded BASE_URL (tanpa .env)
 const BASE_URL = 'https://seacoff-backend.vercel.app';
 
-// Helper function buat build URL foto_menu
 function buildFotoMenuUrl(foto_menu) {
   if (!foto_menu) {
     return `${BASE_URL}/uploads/placeholder.png`;
@@ -71,8 +71,9 @@ app.get('/orders', async (req, res) => {
   }
 });
 
-// Pakai route order & cart
-app.use('/api/cart', cartRoutes);      // Ini udah bener
+
+app.use('/api', cartRoutes);
+
 app.use('/api/orders', orderRoutes);
 
 app.get('/', (req, res) => {
