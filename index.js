@@ -12,27 +12,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/uploads', express.static('uploads')); 
+
 // Hardcoded BASE_URL (tanpa .env)
 const BASE_URL = 'https://seacoff-backend.vercel.app';
 
 // Helper function buat build URL foto_menu
 function buildFotoMenuUrl(foto_menu) {
   if (!foto_menu) {
-    return `${BASE_URL}/uploads/placeholder.png`;  // sesuaikan lokasi placeholder tanpa folder uploads
+    return `${BASE_URL}/uploads/placeholder.png`;
   }
-
-  // Cek apakah foto_menu sudah berupa URL lengkap (http/https)
-  if (foto_menu.startsWith('http://') || foto_menu.startsWith('https://')) {
-    return foto_menu;
-  }
-
-  // Kalau foto_menu hanya path relatif, anggap BASE_URL + path
-  if (foto_menu.startsWith('/')) {
-    return BASE_URL + foto_menu;
-  }
-
-  // Kalau hanya nama file, anggap BASE_URL + / + nama file
-  return `${BASE_URL}/${foto_menu}`;
+  return `${BASE_URL}/uploads/${foto_menu}`;
 }
 
 // Route: Get all menu
