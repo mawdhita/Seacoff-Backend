@@ -15,33 +15,15 @@ app.use(express.urlencoded({ extended: true }));
 // Hardcoded BASE_URL (tanpa .env)
 const BASE_URL = 'https://seacoff-backend.vercel.app';
 
-// Helper function buat build URL foto_menu
-function buildFotoMenuUrl(foto_menu) {
-  if (!foto_menu) {
-    return `${BASE_URL}/placeholder.png`;  // sesuaikan lokasi placeholder tanpa folder uploads
-  }
-
-  // Cek apakah foto_menu sudah berupa URL lengkap (http/https)
-  if (foto_menu.startsWith('http://') || foto_menu.startsWith('https://')) {
-    return foto_menu;
-  }
-
-  // Kalau foto_menu hanya path relatif, anggap BASE_URL + path
-  if (foto_menu.startsWith('/')) {
-    return BASE_URL + foto_menu;
-  }
-
-  // Kalau hanya nama file, anggap BASE_URL + / + nama file
-  return `${BASE_URL}/${foto_menu}`;
-}
-
-// Route: Get all menu
+// ✅ Route: Get all menu
 app.get('/menus', async (req, res) => {
   try {
     const [results] = await pool.query('SELECT * FROM menu');
     const menus = results.map((menu) => ({
       ...menu,
-      foto_menu_url: buildFotoMenuUrl(menu.foto_menu),
+      foto_menu_url: menu.foto_menu
+        ? `${BASE_URL}/uploads/${menu.foto_menu}`
+        : `${BASE_URL}/uploads/placeholder.png`,
     }));
     res.json(menus);
   } catch (err) {
@@ -50,8 +32,8 @@ app.get('/menus', async (req, res) => {
   }
 });
 
-// Route: Get detail menu by ID
-app.get('/DetailMenu/:id', async (req, res) => {
+// ✅ Route: Get detail menu by ID
+app.get('/menus/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const [results] = await pool.query('SELECT * FROM menu WHERE id_menu = ?', [id]);
@@ -61,7 +43,9 @@ app.get('/DetailMenu/:id', async (req, res) => {
     const menu = results[0];
     const menuWithUrl = {
       ...menu,
-      foto_menu_url: buildFotoMenuUrl(menu.foto_menu),
+      foto_menu_url: menu.foto_menu
+        ? `${BASE_URL}/uploads/${menu.foto_menu}`
+        : `${BASE_URL}/uploads/placeholder.png`,
     };
     res.json(menuWithUrl);
   } catch (err) {
@@ -70,7 +54,7 @@ app.get('/DetailMenu/:id', async (req, res) => {
   }
 });
 
-// Route: Get all orders
+// ✅ Route: Get all orders
 app.get('/orders', async (req, res) => {
   try {
     const [results] = await pool.query('SELECT * FROM orders');
@@ -81,16 +65,12 @@ app.get('/orders', async (req, res) => {
   }
 });
 
-// Pakai route order & cart
-app.use('/api/cart', cartRoutes);      // Ini udah bener
-app.use('/api/orders', orderRoutes);
+// ✅ Pakai rute order & cart
+app.use('/api', orderRoutes);
+app.use('/api/cart', cartRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Seacoff sudah jalan cuy!');
-});
-
-app.listen(port, () => {
-  console.log(`Server jalan di port ${port}`);
 });
 
 module.exports = app;
