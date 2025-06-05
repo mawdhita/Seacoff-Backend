@@ -1,87 +1,65 @@
 const express = require('express');
-const cors = require('cors');
-const pool = require('./db');  // pool sudah pakai mysql2/promise
+const router = express.Router();
+const pool = require('../db'); // pool mysql2/promise
 
+router.post('/orders', async (req, res) => {
+  const { nama_user, total_pesanan, status, produk } = req.body;
 
-const app = express();
-const port = 8000;
-
-const orderRoutes = require('./routes/orderRoutes');
-const cartRoutes = require('./routes/cartRoutes');
-
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-app.use('/uploads', express.static('uploads')); 
-
-// Hardcoded BASE_URL (tanpa .env)
-const BASE_URL = 'https://seacoff-backend.vercel.app';
-
-function buildFotoMenuUrl(foto_menu) {
-  if (!foto_menu) {
-    return `${BASE_URL}/uploads/placeholder.png`;
+  if (!nama_user || !total_pesanan || !status || !Array.isArray(produk)) {
+    return res.status(400).json({ message: "Data pesanan tidak lengkap" });
   }
-  return `${BASE_URL}/uploads/${foto_menu}`;
-}
 
-// Route: Get all menu
-app.get('/menus', async (req, res) => {
   try {
-    const [results] = await pool.query('SELECT * FROM menu');
-    const menus = results.map((menu) => ({
-      ...menu,
-      foto_menu_url: buildFotoMenuUrl(menu.foto_menu),
-    }));
-    res.json(menus);
-  } catch (err) {
-    console.error('Error ambil data menu:', err);
-    res.status(500).json({ error: 'Gagal ambil data menu' });
-  }
-});
+    // Cek user
+    const [userResults] = await pool.query(
+      'SELECT id_user FROM users WHERE nama_user = ? LIMIT 1',
+      [nama_user]
+    );
 
-// Route: Get detail menu by ID
-app.get('/DetailMenu/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [results] = await pool.query('SELECT * FROM menu WHERE id_menu = ?', [id]);
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'Menu tidak ditemukan' });
+    let id_user;
+    if (userResults.length > 0) {
+      id_user = userResults[0].id_user;
+    } else {
+      // Insert user baru
+      const [insertUserResult] = await pool.query(
+        'INSERT INTO users (nama_user, created_at, updated_at) VALUES (?, NOW(), NOW())',
+        [nama_user]
+      );
+      id_user = insertUserResult.insertId;
     }
-    const menu = results[0];
-    const menuWithUrl = {
-      ...menu,
-      foto_menu_url: buildFotoMenuUrl(menu.foto_menu),
-    };
-    res.json(menuWithUrl);
+
+    // Insert order
+    const [insertOrderResult] = await pool.query(
+      `INSERT INTO orders (id_user, nama_user, total_pesanan, status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, NOW(), NOW())`,
+      [id_user, nama_user, total_pesanan, status]
+    );
+
+    const orderId = insertOrderResult.insertId;
+
+    // Prepare values untuk order_items
+    const values = produk.map(item => [
+      orderId,
+      item.nama_produk,
+      item.jumlah,
+      item.harga,
+      item.harga * item.jumlah,
+      new Date(),
+      new Date()
+    ]);
+
+    // Insert multiple order items sekaligus
+    await pool.query(
+      `INSERT INTO order_items (id_order, nama_produk, jumlah, harga, total_harga, created_at, updated_at)
+       VALUES ?`,
+      [values]
+    );
+
+    res.status(201).json({ message: 'Pesanan berhasil disimpan', orderId });
   } catch (err) {
-    console.error('Gagal ambil detail menu:', err);
-    res.status(500).json({ error: 'Gagal ambil data menu' });
+    console.error('Error proses pesanan:', err);
+    res.status(500).json({ message: 'Gagal memproses pesanan' });
   }
 });
 
-// Route: Get all orders
-app.get('/orders', async (req, res) => {
-  try {
-    const [results] = await pool.query('SELECT * FROM orders');
-    res.json(results);
-  } catch (err) {
-    console.error('Gagal ambil data orders:', err);
-    res.status(500).json({ error: 'Gagal ambil data orders' });
-  }
-});
-
-
-app.use('/api', cartRoutes);
-
-app.use('/api', orderRoutes);
-
-app.get('/', (req, res) => {
-  res.send('API Seacoff sudah jalan cuy!');
-});
-
-app.listen(port, () => {
-  console.log(`Server jalan di port ${port}`);
-});
-
-module.exports = app;
+module.exports = router;
