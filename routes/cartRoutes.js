@@ -1,13 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const pool = require('../db'); // tambahkan ini!
 const cartController = require('../controllers/cartController');
 
-router.get('/cart', cartController.getCart);
-router.put('/cart/:id_cart', cartController.updateCartQuantity);
-router.delete('/cart/:id_cart', cartController.deleteCartItem);
+// ... router.get() dan router.put() tetap sama
 
-
-// POST /api/cart
 router.post('/cart', async (req, res) => {
   try {
     const { id_menu, quantity } = req.body;
@@ -15,7 +12,6 @@ router.post('/cart', async (req, res) => {
       return res.status(400).json({ error: 'id_menu dan quantity wajib diisi' });
     }
 
-    // Tambahkan ke keranjang
     await pool.query(
       'INSERT INTO cart (id_menu, quantity) VALUES (?, ?)',
       [id_menu, quantity]
@@ -27,8 +23,5 @@ router.post('/cart', async (req, res) => {
     res.status(500).json({ error: 'Gagal menambahkan ke keranjang' });
   }
 });
-
-
-
 
 module.exports = router;
