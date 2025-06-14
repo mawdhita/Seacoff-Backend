@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');  // pakai promise agar mudah async/await
+const mysql = require('mysql2/promise'); 
 require('dotenv').config();
 
 const pool = mysql.createPool({
@@ -9,10 +9,9 @@ const pool = mysql.createPool({
    waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 50000 // 10 detik
+  connectTimeout: 10000 
 });
 
-// Opsional: tes koneksi awal
 (async () => {
   try {
     const connection = await pool.getConnection();

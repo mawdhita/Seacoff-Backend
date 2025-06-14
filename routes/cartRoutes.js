@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // tambahkan ini!
+const pool = require('../db'); 
 
-// GET /api/cart
 router.get('/cart', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -17,7 +16,6 @@ router.get('/cart', async (req, res) => {
   }
 });
 
-// POST /api/cart
 router.post('/cart', async (req, res) => {
   try {
     const { id_menu, quantity } = req.body;
@@ -37,7 +35,6 @@ router.post('/cart', async (req, res) => {
   }
 });
 
-// PUT /api/cart/:id_cart
 router.put('/cart/:id_cart', async (req, res) => {
   const { id_cart } = req.params;
   const { quantity } = req.body;
@@ -58,7 +55,6 @@ router.put('/cart/:id_cart', async (req, res) => {
   }
 });
 
-// DELETE /api/cart/:id_cart
 router.delete('/cart/:id_cart', async (req, res) => {
   const { id_cart } = req.params;
 

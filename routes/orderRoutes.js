@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // Pastikan ini sudah mysql2/promise
+const pool = require('../db'); 
 
-// Endpoint untuk memproses pemesanan
 router.post('/orders', async (req, res) => {
   const { id_user, total_pesanan, status, nama_user, produk } = req.body;
 
@@ -11,7 +10,6 @@ router.post('/orders', async (req, res) => {
   }
 
   try {
-    // Insert ke tabel orders
     const [orderResult] = await pool.query(
       'INSERT INTO orders (id_user, nama_user, total_pesanan, status, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())',
       [id_user, nama_user, total_pesanan, status]
@@ -19,7 +17,6 @@ router.post('/orders', async (req, res) => {
 
     const orderId = orderResult.insertId;
 
-    // Insert ke order_items
     for (const item of produk) {
       if (!item.nama_produk || !item.jumlah || !item.harga) {
         return res.status(400).json({ error: 'Item pesanan tidak lengkap.' });
