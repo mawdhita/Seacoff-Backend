@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db'); // koneksi DB MySQL
+const db = require('../db'); // koneksi DB MySQL
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config(); // Pastikan menggunakan dotenv untuk environment variables

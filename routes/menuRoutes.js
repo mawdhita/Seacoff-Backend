@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db');
+const db = require('../db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');

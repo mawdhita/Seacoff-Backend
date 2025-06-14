@@ -1,7 +1,7 @@
 // routes/salesRoutes.js
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db'); // pastikan file koneksi MySQL lo
+const db = require('../db'); // pastikan file koneksi MySQL lo
 
 // Get total sales per day
 router.get('/sales-per-day', (req, res) => {

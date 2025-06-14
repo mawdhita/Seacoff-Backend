@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db');
+const db = require('../db');
 
-// Authentication middleware (assuming you want to protect these endpoints)
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -27,7 +26,6 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Helper function to promisify database queries
 const queryAsync = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     db.query(sql, params, (err, results) => {
