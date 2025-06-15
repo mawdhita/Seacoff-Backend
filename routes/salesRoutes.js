@@ -22,12 +22,15 @@ router.get('/sales-per-day', async (req, res) => {
 router.get('/sales-per-week', async (req, res) => {
   try {
     const [results] = await pool.query(`
-  SELECT nama_produk, kategori, SUM(jumlah) AS total_terjual
-  FROM order_items
-  GROUP BY nama_produk, kategori
-  ORDER BY total_terjual DESC
-`);
-
+      SELECT
+        YEAR(created_at) AS year,
+        WEEK(created_at, 1) AS week,
+        COUNT(*) AS total_orders,
+        SUM(total_pesanan) AS total_sales
+      FROM orders
+      GROUP BY year, week
+      ORDER BY year, week
+    `);
     res.json(results);
   } catch (err) {
     console.error('Error fetching sales per week:', err);
@@ -36,43 +39,20 @@ router.get('/sales-per-week', async (req, res) => {
 });
 
 // Get best-selling products
-// Get best-selling products (Top 1 per kategori: makanan dan minuman)
 router.get('/best-sellers', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT kategori, nama_produk, total_terjual
-      FROM (
-        SELECT p.kategori, oi.nama_produk, SUM(oi.jumlah) AS total_terjual
-        FROM order_items oi
-        JOIN products p ON oi.nama_produk = p.nama_produk
-        GROUP BY p.kategori, oi.nama_produk
-      ) AS sales
-      WHERE (kategori = 'makanan' AND total_terjual = (
-                SELECT MAX(jml) FROM (
-                    SELECT SUM(oi.jumlah) AS jml
-                    FROM order_items oi
-                    JOIN products p ON oi.nama_produk = p.nama_produk
-                    WHERE p.kategori = 'makanan'
-                    GROUP BY oi.nama_produk
-                ) AS sub1
-            ))
-         OR (kategori = 'minuman' AND total_terjual = (
-                SELECT MAX(jml) FROM (
-                    SELECT SUM(oi.jumlah) AS jml
-                    FROM order_items oi
-                    JOIN products p ON oi.nama_produk = p.nama_produk
-                    WHERE p.kategori = 'minuman'
-                    GROUP BY oi.nama_produk
-                ) AS sub2
-            ));
+      SELECT nama_produk, SUM(jumlah) as total_terjual
+      FROM order_items
+      GROUP BY nama_produk
+      ORDER BY total_terjual DESC
+      LIMIT 5
     `);
-
     res.json(results);
   } catch (err) {
     console.error('Error fetching best sellers:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 module.exports = router;
