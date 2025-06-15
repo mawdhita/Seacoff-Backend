@@ -6,6 +6,11 @@ const pool = require('./db');
 const app = express();
 const port = 8000;
 
+const menuRoutes = require('./routes/menuRoutes');           // Route untuk menu
+const salesRoutes = require('./routes/salesRoutes');         // Route untuk sales
+const authRoutes = require('./routes/authRoutes');           // Route untuk login/registrasi
+const dashboardRoutes = require('./routes/dashboardRoutes'); // Route untuk dashboard
+const uploadRoutes = require("./upload");
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
@@ -69,6 +74,40 @@ app.get('/orders', async (req, res) => {
     res.status(500).json({ error: 'Gagal ambil data orders' });
   }
 });
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static('uploads'));
+
+
+// Multer setup langsung di sini
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+     cb(null, "public/images");
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+const upload = multer({ storage });
+
+// Endpoint upload langsung (POST /api/upload)
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.json({ message: 'Upload berhasil', imageUrl });
+});
+
+// Routes
+app.use('/api/menu', menuRoutes);        // Route untuk menu
+app.use('/api/sales', salesRoutes);      // Route untuk sales
+app.use('/api/auth', authRoutes);        // Route untuk login dan registrasi
+app.use('/api', dashboardRoutes);        // Route untuk dashboard
+app.use("/uploads", express.static('uploads')); // buat akses gambar
+
+
 
 
 app.use('/api', cartRoutes);
