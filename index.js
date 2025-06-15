@@ -89,9 +89,9 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 
 // Routes
 app.use('/api/menu', menuRoutes);
-app.use('/api/sales', salesRoutes);
+app.use('/sales', salesRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api', dashboardRoutes);
+app.use('/dashboard', dashboardRoutes);
 app.use('/api', cartRoutes);
 app.use('/api', orderRoutes);
 
