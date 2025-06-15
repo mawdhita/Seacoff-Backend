@@ -14,8 +14,22 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
+const allowedOrigins = [
+  'https://seacoff-frontend.vercel.app',
+  'https://seacoff-frontend-i86fla1dh-mawdhitas-projects.vercel.app',
+  'https://seacoff-frontend.vercel.app/login',
+  'https://seacoff-frontend.vercel.app/dashboard',
+  'https://seacoff-frontend.vercel.app/menu-page'
+];
+
 app.use(cors({
-  origin: 'https://seacoff-frontend-i86fla1dh-mawdhitas-projects.vercel.app'
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
