@@ -103,13 +103,27 @@ app.get('/DetailMenu/:id', async (req, res) => {
 // Route: Get all orders
 app.get('/orders', async (req, res) => {
   try {
-    const [results] = await pool.query('SELECT * FROM orders');
+    const [results] = await pool.query(`
+      SELECT 
+        o.id_order,
+        u.nama AS nama_user,
+        o.total_pesanan,
+        o.status,
+        p.nama_produk,
+        oi.jumlah
+      FROM orders o
+      JOIN order_items oi ON o.id_order = oi.id_order
+      JOIN produk p ON oi.id_produk = p.id_produk
+      JOIN users u ON o.id_user = u.id_user
+      ORDER BY o.id_order DESC
+    `);
     res.json(results);
   } catch (err) {
     console.error('Gagal ambil data orders:', err);
     res.status(500).json({ error: 'Gagal ambil data orders' });
   }
 });
+
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
