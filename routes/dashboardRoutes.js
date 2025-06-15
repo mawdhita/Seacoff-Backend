@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/db');
+const db = require('../db');
 
 // Endpoint: /api/sales-per-day
 router.get('/sales-per-day', (req, res) => {
