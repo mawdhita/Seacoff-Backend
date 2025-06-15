@@ -61,7 +61,8 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', cartRoutes);
-app.use('/api', orderRoutes); // optional: sesuaikan kapitalisasi konsisten
+app.use('/api', orderRoutes);
+ // optional: sesuaikan kapitalisasi konsisten
 
 
 // Route: Get all menu
