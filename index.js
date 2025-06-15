@@ -95,6 +95,31 @@ app.use('/dashboard', dashboardRoutes);
 app.use('/api', cartRoutes);
 app.use('/api', orderRoutes);
 
+app.get('dashboards/sales-per-week', (req, res) => {
+  const weeks = req.query.weeks || 8; // Default 8 minggu terakhir
+  
+  const query = `
+    SELECT
+      YEAR(created_at) AS year,
+      WEEK(created_at, 1) AS week,
+      COALESCE(SUM(total_pesanan), 0) AS total_sales,
+      COUNT(*) AS total_orders,
+      DATE(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY)) AS week_start
+    FROM orders
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? WEEK)
+    GROUP BY year, week
+    ORDER BY year ASC, week ASC
+  `;
+  
+  db.query(query, [weeks], (err, results) => {
+    if (err) {
+      console.error('Error fetching weekly sales:', err);
+      return res.status(500).json({ error: 'Failed to fetch weekly sales data' });
+    }
+    res.json(results);
+  });
+});
+
 app.get('/', (req, res) => {
   res.send('API Seacoff sudah jalan cuy!');
 });
