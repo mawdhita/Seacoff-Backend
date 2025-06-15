@@ -112,7 +112,7 @@ app.get('/orders', async (req, res) => {
         oi.nama_produk,
         oi.jumlah
       FROM orders o
-      JOIN order_item oi ON o.id_order = oi.id_order
+      JOIN order_items oi ON o.id_order = oi.id_order
       ORDER BY o.id_order DESC
     `);
     res.json(results);
