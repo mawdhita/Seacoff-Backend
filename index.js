@@ -63,7 +63,8 @@ app.use('/api', dashboardRoutes);
 app.use('/api', cartRoutes);
 app.use('/Api', orderRoutes); // optional: sesuaikan kapitalisasi konsisten
 
-// ==== Endpoint Sample ====
+
+// Route: Get all menu
 app.get('/menus', async (req, res) => {
   try {
     const [results] = await pool.query('SELECT * FROM menu');
@@ -77,6 +78,40 @@ app.get('/menus', async (req, res) => {
     res.status(500).json({ error: 'Gagal ambil data menu' });
   }
 });
+
+// Route: Get detail menu by ID
+app.get('/DetailMenu/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [results] = await pool.query('SELECT * FROM menu WHERE id_menu = ?', [id]);
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Menu tidak ditemukan' });
+    }
+    const menu = results[0];
+    const menuWithUrl = {
+      ...menu,
+      foto_menu_url: buildFotoMenuUrl(menu.foto_menu),
+    };
+    res.json(menuWithUrl);
+  } catch (err) {
+    console.error('Gagal ambil detail menu:', err);
+    res.status(500).json({ error: 'Gagal ambil data menu' });
+  }
+});
+
+// Route: Get all orders
+app.get('/orders', async (req, res) => {
+  try {
+    const [results] = await pool.query('SELECT * FROM orders');
+    res.json(results);
+  } catch (err) {
+    console.error('Gagal ambil data orders:', err);
+    res.status(500).json({ error: 'Gagal ambil data orders' });
+  }
+});
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use('/uploads', express.static('uploads'));
 
 // ==== Root ====
 app.get('/', (req, res) => {
