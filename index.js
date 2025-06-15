@@ -109,6 +109,35 @@ app.get('/orders', async (req, res) => {
     res.status(500).json({ error: 'Gagal ambil data orders' });
   }
 });
+
+app.patch('/orders/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const allowedStatus = ['pending', 'paid', 'canceled'];
+  if (!status || !allowedStatus.includes(status)) {
+    return res.status(400).json({
+      error: 'Status tidak valid. Gunakan salah satu dari: pending, paid, canceled.'
+    });
+  }
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE orders SET status = ?, updated_at = NOW() WHERE id_order = ?',
+      [status, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Pesanan dengan ID tersebut tidak ditemukan.' });
+    }
+
+    res.json({ message: 'Status pesanan berhasil diperbarui' });
+  } catch (err) {
+    console.error('Gagal update status pesanan:', err);
+    res.status(500).json({ error: 'Gagal update status pesanan', details: err.message });
+  }
+});
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static('uploads'));
