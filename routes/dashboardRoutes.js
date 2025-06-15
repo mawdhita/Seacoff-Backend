@@ -30,5 +30,21 @@ router.get('/best-sellers', (req, res) => {
     res.json(results);
   });
 });
+// Endpoint: /api/sales-per-week
+router.get('/sales-per-week', (req, res) => {
+  const query = `
+    SELECT
+      YEAR(created_at) AS year,
+      WEEK(created_at, 1) AS week,
+      SUM(total_pesanan) AS total_sales
+    FROM orders
+    GROUP BY year, week
+    ORDER BY year, week
+  `;
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
 
 module.exports = router;
