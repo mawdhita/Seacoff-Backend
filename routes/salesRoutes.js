@@ -36,21 +36,37 @@ router.get('/sales-per-week', async (req, res) => {
 });
 
 // Get best-selling products
+// Get best-selling products (Top 1 per kategori: makanan dan minuman)
 router.get('/best-sellers', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT kategori, nama_produk, total_terjual FROM (
-        SELECT 
-          p.kategori,
-          oi.nama_produk,
-          SUM(oi.jumlah) AS total_terjual,
-          ROW_NUMBER() OVER (PARTITION BY p.kategori ORDER BY SUM(oi.jumlah) DESC) AS rn
+      SELECT kategori, nama_produk, total_terjual
+      FROM (
+        SELECT p.kategori, oi.nama_produk, SUM(oi.jumlah) AS total_terjual
         FROM order_items oi
         JOIN products p ON oi.nama_produk = p.nama_produk
         GROUP BY p.kategori, oi.nama_produk
-      ) ranked
-      WHERE rn = 1
+      ) AS sales
+      WHERE (kategori = 'makanan' AND total_terjual = (
+                SELECT MAX(jml) FROM (
+                    SELECT SUM(oi.jumlah) AS jml
+                    FROM order_items oi
+                    JOIN products p ON oi.nama_produk = p.nama_produk
+                    WHERE p.kategori = 'makanan'
+                    GROUP BY oi.nama_produk
+                ) AS sub1
+            ))
+         OR (kategori = 'minuman' AND total_terjual = (
+                SELECT MAX(jml) FROM (
+                    SELECT SUM(oi.jumlah) AS jml
+                    FROM order_items oi
+                    JOIN products p ON oi.nama_produk = p.nama_produk
+                    WHERE p.kategori = 'minuman'
+                    GROUP BY oi.nama_produk
+                ) AS sub2
+            ));
     `);
+
     res.json(results);
   } catch (err) {
     console.error('Error fetching best sellers:', err);
