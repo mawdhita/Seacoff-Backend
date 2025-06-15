@@ -1,5 +1,5 @@
 // controllers/authController.js
-const db = require("../config/db");
+const db = require("../db");
 
 const loginAdmin = (req, res) => {
   const { username, password } = req.body;
