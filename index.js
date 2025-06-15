@@ -1,16 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');  
-
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 const port = 8000;
 
-const menuRoutes = require('./routes/menuRoutes');           // Route untuk menu
-const salesRoutes = require('./routes/salesRoutes');         // Route untuk sales
-const authRoutes = require('./routes/authRoutes');           // Route untuk login/registrasi
-const dashboardRoutes = require('./routes/dashboardRoutes'); // Route untuk dashboard
-const uploadRoutes = require("./uploads");
+const menuRoutes = require('./routes/menuRoutes');
+const salesRoutes = require('./routes/salesRoutes');
+const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
@@ -18,15 +18,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static('uploads')); 
-
-const BASE_URL = 'https://seacoff-backend.vercel.app';
+const BASE_URL = 'https://raw.githubusercontent.com/mawdhita/Seacoff-Backend/main/uploads/';
 
 function buildFotoMenuUrl(foto_menu) {
   if (!foto_menu) {
-    return `${BASE_URL}/uploads/placeholder.png`;
+    return `${BASE_URL}placeholder.png`;
   }
-  return `${BASE_URL}/uploads/${foto_menu}`;
+  return `${BASE_URL}${foto_menu}`;
 }
 
 // Route: Get all menu
@@ -74,45 +72,28 @@ app.get('/orders', async (req, res) => {
     res.status(500).json({ error: 'Gagal ambil data orders' });
   }
 });
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use('/uploads', express.static('uploads'));
 
-
-// Multer setup langsung di sini
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-     cb(null, "public/images");
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
-  }
-});
+// Multer setup untuk upload
+const storage = multer.memoryStorage(); // Simpan di memory
 const upload = multer({ storage });
 
-// Endpoint upload langsung (POST /api/upload)
+// Endpoint upload (POST /api/upload)
 app.post('/api/upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  const imageUrl = `/uploads/${req.file.filename}`;
-  res.json({ message: 'Upload berhasil', imageUrl });
+  // Proses upload ke API atau simpan di tempat lain
+  // Misalnya, Anda bisa menggunakan axios untuk mengupload ke server lain
+  res.json({ message: 'Upload berhasil', imageUrl: `${BASE_URL}${req.file.originalname}` });
 });
 
 // Routes
-app.use('/api/menu', menuRoutes);        // Route untuk menu
-app.use('/api/sales', salesRoutes);      // Route untuk sales
-app.use('/api/auth', authRoutes);        // Route untuk login dan registrasi
-app.use('/api', dashboardRoutes);        // Route untuk dashboard
-app.use("/uploads", express.static('uploads')); // buat akses gambar
-
-
-
-
+app.use('/api/menu', menuRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api', dashboardRoutes);
 app.use('/api', cartRoutes);
-
-app.use('/Api', orderRoutes);
+app.use('/api', orderRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Seacoff sudah jalan cuy!');
