@@ -106,15 +106,13 @@ app.get('/orders', async (req, res) => {
     const [results] = await pool.query(`
       SELECT 
         o.id_order,
-        u.nama AS nama_user,
+        o.nama_user,
         o.total_pesanan,
         o.status,
-        p.nama_produk,
+        oi.nama_produk,
         oi.jumlah
       FROM orders o
-      JOIN order_items oi ON o.id_order = oi.id_order
-      JOIN produk p ON oi.id_produk = p.id_produk
-      JOIN users u ON o.id_user = u.id_user
+      JOIN order_item oi ON o.id_order = oi.id_order
       ORDER BY o.id_order DESC
     `);
     res.json(results);
