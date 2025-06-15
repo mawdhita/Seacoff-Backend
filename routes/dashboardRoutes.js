@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // mysql2/promise
 
-// Get total sales per day
+// Penjualan per hari untuk grafik
 router.get('/sales-per-day', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT DATE(created_at) as date, SUM(total_pesanan) as total_sales
+      SELECT DATE(created_at) AS date, SUM(total_pesanan) AS total_sales
       FROM orders
+      WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
       GROUP BY DATE(created_at)
       ORDER BY date ASC
     `);
@@ -18,35 +19,38 @@ router.get('/sales-per-day', async (req, res) => {
   }
 });
 
-// Get total sales per week
+// Statistik penjualan dan item terjual minggu ini
 router.get('/sales-per-week', async (req, res) => {
   try {
-    const [results] = await pool.query(`
-      SELECT
-        YEAR(created_at) AS year,
-        WEEK(created_at, 1) AS week,
-        COUNT(*) AS total_orders,
-        SUM(total_pesanan) AS total_sales
+    const [result] = await pool.query(`
+      SELECT 
+        IFNULL(SUM(total_pesanan), 0) AS total_income,
+        IFNULL(SUM(total_items), 0) AS total_items
       FROM orders
-      GROUP BY year, week
-      ORDER BY year, week
+      WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
     `);
-    res.json(results);
+    res.json(result[0]); // Frontend expects an object
   } catch (err) {
     console.error('Error fetching sales per week:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Get best-selling products
+// Menu terlaris: 1 makanan & 1 minuman
 router.get('/best-sellers', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT nama_produk, SUM(jumlah) as total_terjual
-      FROM order_items
-      GROUP BY nama_produk
-      ORDER BY total_terjual DESC
-      LIMIT 5
+      SELECT kategori, nama_produk, total_terjual FROM (
+        SELECT 
+          p.kategori,
+          oi.nama_produk,
+          SUM(oi.jumlah) AS total_terjual,
+          ROW_NUMBER() OVER (PARTITION BY p.kategori ORDER BY SUM(oi.jumlah) DESC) AS rn
+        FROM order_items oi
+        JOIN products p ON oi.nama_produk = p.nama_produk
+        GROUP BY p.kategori, oi.nama_produk
+      ) ranked
+      WHERE rn = 1
     `);
     res.json(results);
   } catch (err) {
