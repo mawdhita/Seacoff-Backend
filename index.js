@@ -10,7 +10,7 @@ const menuRoutes = require('./routes/menuRoutes');           // Route untuk menu
 const salesRoutes = require('./routes/salesRoutes');         // Route untuk sales
 const authRoutes = require('./routes/authRoutes');           // Route untuk login/registrasi
 const dashboardRoutes = require('./routes/dashboardRoutes'); // Route untuk dashboard
-const uploadRoutes = require("./upload");
+const uploadRoutes = require("./uploads");
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
