@@ -42,11 +42,17 @@ router.get('/sales-per-week', async (req, res) => {
 router.get('/best-sellers', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT nama_produk, SUM(jumlah) as total_terjual
-      FROM order_items
-      GROUP BY nama_produk
-      ORDER BY total_terjual DESC
-      LIMIT 5
+      SELECT kategori, nama_produk, total_terjual FROM (
+        SELECT 
+          p.kategori,
+          oi.nama_produk,
+          SUM(oi.jumlah) AS total_terjual,
+          ROW_NUMBER() OVER (PARTITION BY p.kategori ORDER BY SUM(oi.jumlah) DESC) AS rn
+        FROM order_items oi
+        JOIN products p ON oi.nama_produk = p.nama_produk
+        GROUP BY p.kategori, oi.nama_produk
+      ) ranked
+      WHERE rn = 1
     `);
     res.json(results);
   } catch (err) {
@@ -54,5 +60,6 @@ router.get('/best-sellers', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 module.exports = router;
