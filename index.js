@@ -15,7 +15,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
 app.use(cors({
-  origin: 'https://seacoff-frontend.vercel.app'
+  origin: 'https://seacoff-frontend-i86fla1dh-mawdhitas-projects.vercel.app'
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
