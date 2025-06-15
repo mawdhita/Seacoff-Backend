@@ -1,44 +1,40 @@
-// controllers/authController.js
-const pool = require("../db"); // Pastikan menggunakan pool bukan db
+// controllers/authController.js - Optimized untuk FreeDB
+const pool = require("../db");
 
 const loginAdmin = async (req, res) => {
-  console.log('Login attempt started');
-  console.log('Request body:', req.body);
+  console.log('=== LOGIN ADMIN START ===');
+  
+  let connection = null;
   
   try {
     const { username, password } = req.body;
-
+    
     // Validasi input
     if (!username || !password) {
       return res.status(400).json({ 
-        message: "Username dan password harus diisi" 
+        message: "Username dan password harus diisi"
       });
     }
 
-    console.log('Attempting database query...');
+    console.log('Getting database connection...');
     
-    // Gunakan pool.query dengan Promise (bukan callback)
+    // Get connection from pool
+    connection = await pool.getConnection();
+    console.log('✅ Connection acquired');
+    
+    // Execute query
     const sql = "SELECT * FROM admins WHERE username = ? AND password = ?";
+    const [results] = await connection.execute(sql, [username, password]);
     
-    // Tambahkan timeout untuk database query
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database query timeout after 15 seconds')), 15000)
-    );
-    
-    const queryPromise = pool.query(sql, [username, password]);
-    
-    const [results] = await Promise.race([queryPromise, timeoutPromise]);
-    
-    console.log('Database query completed, results count:', results.length);
+    console.log('Query executed, results count:', results.length);
 
     if (results.length === 0) {
-      console.log('Invalid credentials for username:', username);
       return res.status(401).json({ 
-        message: "Username atau password salah" 
+        message: "Username atau password salah"
       });
     }
 
-    console.log('Login successful for username:', username);
+    console.log('✅ Login successful');
     return res.status(200).json({ 
       message: "Login berhasil",
       user: {
@@ -48,31 +44,40 @@ const loginAdmin = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error details:', error);
+    console.error('❌ Login error:', error.message);
+    console.error('Error code:', error.code);
     
-    // Handle different types of errors
-    if (error.message.includes('timeout')) {
-      return res.status(504).json({ 
-        message: "Database connection timeout",
-        error: "Server sedang mengalami masalah koneksi database"
+    // Handle specific FreeDB errors
+    if (error.message.includes('max_connections_per_hour')) {
+      return res.status(429).json({ 
+        message: "Terlalu banyak koneksi database. Silakan coba lagi dalam beberapa menit.",
+        error: "Database connection limit exceeded",
+        retryAfter: 3600 // 1 hour in seconds
       });
     }
     
     if (error.code === 'ECONNREFUSED') {
-      return res.status(500).json({ 
-        message: "Database connection refused",
-        error: "Tidak dapat terhubung ke database"
+      return res.status(503).json({ 
+        message: "Database sedang tidak tersedia",
+        error: "Service unavailable"
       });
     }
     
     return res.status(500).json({ 
-      message: "Server error", 
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      message: "Terjadi kesalahan server", 
+      error: "Internal server error"
     });
+    
+  } finally {
+    // ALWAYS release connection back to pool
+    if (connection) {
+      console.log('🔄 Releasing connection...');
+      connection.release();
+      console.log('✅ Connection released');
+    }
   }
 };
 
-// Tambahkan health check function
 const healthCheck = (req, res) => {
   console.log('Health check called');
   res.status(200).json({ 
@@ -82,22 +87,47 @@ const healthCheck = (req, res) => {
   });
 };
 
-// Test database connection
 const testDbConnection = async (req, res) => {
+  let connection = null;
+  
   try {
     console.log('Testing database connection...');
-    const [results] = await pool.query('SELECT 1 as test');
-    console.log('Database connection test successful');
+    
+    // Get connection
+    connection = await pool.getConnection();
+    console.log('✅ Connection acquired for test');
+    
+    // Simple test query
+    const [results] = await connection.execute('SELECT 1 as test, NOW() as current_time');
+    console.log('✅ Test query successful');
+    
     res.status(200).json({ 
       status: 'Database connected', 
-      result: results[0] 
+      result: results[0],
+      message: 'Connection test successful'
     });
+    
   } catch (error) {
-    console.error('Database connection test failed:', error);
-    res.status(500).json({ 
-      status: 'Database connection failed', 
-      error: error.message 
-    });
+    console.error('❌ Database test failed:', error.message);
+    
+    if (error.message.includes('max_connections_per_hour')) {
+      res.status(429).json({ 
+        status: 'Connection limit exceeded', 
+        error: 'Database hourly connection limit reached',
+        retryAfter: 3600
+      });
+    } else {
+      res.status(500).json({ 
+        status: 'Database connection failed', 
+        error: error.message
+      });
+    }
+    
+  } finally {
+    if (connection) {
+      console.log('🔄 Releasing test connection...');
+      connection.release();
+    }
   }
 };
 
