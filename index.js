@@ -14,15 +14,8 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
-const allowedOrigins = [
-  'https://seacoff-frontend.vercel.app'
-];
-
-app.use(cors({
-  origin: '*', // 👈 sementara izinkan semua (untuk testing, bisa dibatasi nanti)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));app.use(express.json());
+app.use(cors());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const BASE_URL = 'https://raw.githubusercontent.com/mawdhita/Seacoff-Backend/main/uploads/';
@@ -98,7 +91,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 app.use('/api/menu', menuRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api', dashboardRoutes);
 app.use('/api', cartRoutes);
 app.use('/api', orderRoutes);
 
