@@ -23,11 +23,13 @@ router.get('/sales-per-week', async (req, res) => {
   try {
     const [results] = await pool.query(`
       SELECT
-  COUNT(*) AS total_orders,
-  SUM(total_pesanan) AS total_sales,
-  SUM((SELECT SUM(jumlah) FROM order_items WHERE order_id = orders.id)) AS total_items
-FROM orders
-WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
+        YEAR(created_at) AS year,
+        WEEK(created_at, 1) AS week,
+        COUNT(*) AS total_orders,
+        SUM(total_pesanan) AS total_sales
+      FROM orders
+      GROUP BY year, week
+      ORDER BY year, week
     `);
     res.json(results);
   } catch (err) {
@@ -40,14 +42,12 @@ WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
 router.get('/best-sellers', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT p.nama_produk, p.kategori, SUM(oi.jumlah) as total_terjual
-FROM order_items oi
-JOIN products p ON oi.nama_produk = p.nama_produk
-GROUP BY p.nama_produk, p.kategori
-ORDER BY total_terjual DESC
-LIMIT 5
+      SELECT nama_produk, SUM(jumlah) as total_terjual
+      FROM order_items
+      GROUP BY nama_produk
+      ORDER BY total_terjual DESC
+      LIMIT 5
     `);
-    
     res.json(results);
   } catch (err) {
     console.error('Error fetching best sellers:', err);
