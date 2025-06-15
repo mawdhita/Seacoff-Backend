@@ -15,11 +15,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 
 const allowedOrigins = [
-  'https://seacoff-frontend.vercel.app',
-  'https://seacoff-frontend-i86fla1dh-mawdhitas-projects.vercel.app',
-  'https://seacoff-frontend.vercel.app/login',
-  'https://seacoff-frontend.vercel.app/dashboard',
-  'https://seacoff-frontend.vercel.app/menu-page'
+  'https://seacoff-frontend.vercel.app'
 ];
 
 app.use(cors({
