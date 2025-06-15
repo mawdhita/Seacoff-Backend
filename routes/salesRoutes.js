@@ -22,15 +22,12 @@ router.get('/sales-per-day', async (req, res) => {
 router.get('/sales-per-week', async (req, res) => {
   try {
     const [results] = await pool.query(`
-      SELECT
-        YEAR(created_at) AS year,
-        WEEK(created_at, 1) AS week,
-        COUNT(*) AS total_orders,
-        SUM(total_pesanan) AS total_sales
-      FROM orders
-      GROUP BY year, week
-      ORDER BY year, week
-    `);
+  SELECT nama_produk, kategori, SUM(jumlah) AS total_terjual
+  FROM order_items
+  GROUP BY nama_produk, kategori
+  ORDER BY total_terjual DESC
+`);
+
     res.json(results);
   } catch (err) {
     console.error('Error fetching sales per week:', err);
