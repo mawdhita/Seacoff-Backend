@@ -11,13 +11,7 @@ const port = 8000;
 const BASE_URL = 'https://seacoff-backend.vercel.app';
 
 // ==== Middleware ====
-app.use(
-  cors({
-    origin: ['https://seacoff-frontend.vercel.app'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type'],
-  })
-);
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
