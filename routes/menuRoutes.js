@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const cors = require('cors');
 const db = require('../db'); // <- sekarang ini adalah POOL
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+
+app.use(cors());
 
 // Setup multer untuk upload file ke folder 'uploads'
 const storage = multer.diskStorage({
