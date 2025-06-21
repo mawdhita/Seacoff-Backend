@@ -1,72 +1,90 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // ini harus mysql2/promise pool
+const pool = require('../db'); // mysql2/promise pool
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// Setup multer untuk upload file ke folder 'uploads'
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
+// Konfigurasi Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer({ storage: storage });
 
-// GET semua menu
+// Storage untuk multer
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'menu_images',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+  },
+});
+const upload = multer({ storage });
+
+/**
+ * Ambil semua menu
+ */
 router.get('/menu', async (req, res) => {
   try {
-    const [results] = await pool.query('SELECT * FROM menu');
-    res.json(results);
-  } catch (err) {
-    console.error('Error saat mengambil data menu:', err);
+    const [rows] = await pool.query('SELECT * FROM menu');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error ambil menu:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-// POST tambah menu baru
+/**
+ * Tambah menu baru
+ */
 router.post('/menu', upload.single('foto_menu'), async (req, res) => {
   const { nama_menu, deskripsi, harga, kategori } = req.body;
-  const foto_menu = req.file ? req.file.filename : null;
+  const foto_menu = req.file ? req.file.path : null; // Cloudinary URL
 
   try {
-    const [results] = await pool.query(
+    const [result] = await pool.query(
       'INSERT INTO menu (nama_menu, deskripsi, harga, kategori, foto_menu) VALUES (?, ?, ?, ?, ?)',
       [nama_menu, deskripsi, harga, kategori, foto_menu]
     );
 
-    res.status(201).json({ id_menu: results.insertId, nama_menu, deskripsi, harga, kategori, foto_menu });
-  } catch (err) {
-    console.error('Error saat menambah menu:', err);
+    res.status(201).json({
+      id_menu: result.insertId,
+      nama_menu,
+      deskripsi,
+      harga,
+      kategori,
+      foto_menu,
+    });
+  } catch (error) {
+    console.error('Error tambah menu:', error);
     res.status(500).send('Internal Server Error');
   }
 });
 
-// PUT update menu
+/**
+ * Update menu
+ */
 router.put('/menu/:id', upload.single('foto_menu'), async (req, res) => {
+  const { id } = req.params;
   const { nama_menu, deskripsi, harga, kategori } = req.body;
-  const id_menu = req.params.id;
-
-  console.log('Request PUT:', { id_menu, body: req.body, file: req.file });
 
   try {
-    const [rows] = await pool.query(
-      'SELECT foto_menu FROM menu WHERE id_menu = ?',
-      [id_menu]
-    );
-
+    // Ambil data lama
+    const [rows] = await pool.query('SELECT foto_menu FROM menu WHERE id_menu = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ error: 'Menu tidak ditemukan' });
 
     let newFoto = rows[0].foto_menu;
+
+    // Jika ada file baru diupload
     if (req.file) {
-      newFoto = req.file.filename;
-      if (rows[0].foto_menu) {
-        const oldPath = path.join(__dirname, '../uploads/', rows[0].foto_menu);
-        fs.unlink(oldPath, (err) => {
-          if (err && err.code !== 'ENOENT') {
+      newFoto = req.file.path;
+      const oldUrl = rows[0].foto_menu;
+      if (oldUrl) {
+        // Hapus file lama di Cloudinary
+        const publicId = oldUrl.split('/').slice(-1)[0].split('.')[0]; // ambil public_id
+        cloudinary.uploader.destroy(`menu_images/${publicId}`, (err) => {
+          if (err) {
             console.warn('Gagal hapus file lama:', err.message);
           }
         });
@@ -75,42 +93,39 @@ router.put('/menu/:id', upload.single('foto_menu'), async (req, res) => {
 
     await pool.query(
       'UPDATE menu SET nama_menu=?, deskripsi=?, harga=?, kategori=?, foto_menu=? WHERE id_menu=?',
-      [nama_menu, deskripsi, harga, kategori, newFoto, id_menu]
+      [nama_menu, deskripsi, harga, kategori, newFoto, id]
     );
 
-    res.json({ success: true });
+    res.json({ success: true, foto_menu: newFoto });
   } catch (error) {
-    console.error('Error saat update menu:', error);
+    console.error('Error update menu:', error);
     res.status(500).send('Internal Server Error');
   }
 });
 
-// DELETE menu
+/**
+ * Hapus menu
+ */
 router.delete('/menu/:id', async (req, res) => {
-  const id_menu = req.params.id;
-
+  const { id } = req.params;
   try {
-    const [oldData] = await pool.query('SELECT foto_menu FROM menu WHERE id_menu = ?', [id_menu]);
-    if (oldData.length === 0) {
-      return res.status(404).json({ error: 'Menu tidak ditemukan' });
-    }
+    const [rows] = await pool.query('SELECT foto_menu FROM menu WHERE id_menu = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Menu tidak ditemukan' });
 
-    const oldFoto = oldData[0].foto_menu;
-
-    await pool.query('DELETE FROM menu WHERE id_menu = ?', [id_menu]);
-
-    if (oldFoto) {
-      const oldPath = path.join(__dirname, '../uploads/', oldFoto);
-      fs.unlink(oldPath, (err) => {
-        if (err && err.code !== 'ENOENT') {
+    const oldUrl = rows[0].foto_menu;
+    if (oldUrl) {
+      const publicId = oldUrl.split('/').slice(-1)[0].split('.')[0];
+      cloudinary.uploader.destroy(`menu_images/${publicId}`, (err) => {
+        if (err) {
           console.warn('Gagal hapus file lama:', err.message);
         }
       });
     }
 
+    await pool.query('DELETE FROM menu WHERE id_menu = ?', [id]);
     res.json({ success: true });
-  } catch (err) {
-    console.error('Error saat menghapus menu:', err);
+  } catch (error) {
+    console.error('Error hapus menu:', error);
     res.status(500).send('Internal Server Error');
   }
 });
