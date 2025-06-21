@@ -56,7 +56,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 
-app.use('/api/menu', menuRoutes);
+app.use('/api', menuRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', dashboardRoutes);

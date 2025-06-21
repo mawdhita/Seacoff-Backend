@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // GET semua menu
-router.get('/', (req, res) => {
+router.get('/menu', (req, res) => {
   const query = 'SELECT * FROM menu';
   db.query(query, (err, results) => {
     if (err) {
@@ -31,7 +31,7 @@ router.get('/', (req, res) => {
 });
 
 // POST tambah menu baru
-router.post('/', upload.single('foto_menu'), (req, res) => {
+router.post('/menu', upload.single('foto_menu'), (req, res) => {
   const { nama_menu, deskripsi, harga, kategori } = req.body;
   const foto_menu = req.file ? req.file.filename : null;
 
@@ -46,7 +46,7 @@ router.post('/', upload.single('foto_menu'), (req, res) => {
 });
 
 // PUT update menu
-router.put('/:id', upload.single('foto_menu'), (req, res) => {
+router.put('/menu:id', upload.single('foto_menu'), (req, res) => {
   const { nama_menu, deskripsi, harga, kategori } = req.body;
   const id_menu = req.params.id;
 
@@ -92,7 +92,7 @@ router.put('/:id', upload.single('foto_menu'), (req, res) => {
 });
 
 // DELETE menu
-router.delete('/:id', (req, res) => {
+router.delete('/menu:id', (req, res) => {
   const id_menu = req.params.id;
   const selectQuery = 'SELECT foto_menu FROM menu WHERE id_menu = ?';
   db.query(selectQuery, [id_menu], (err, results) => {
