@@ -15,6 +15,7 @@ app.use(
   cors({
     origin: ['https://seacoff-frontend.vercel.app'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
   })
 );
 app.use(express.json({ limit: '10mb' }));
@@ -128,7 +129,7 @@ app.get('/orders', async (req, res) => {
 });
 
 
-
+app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static('uploads'));
 
