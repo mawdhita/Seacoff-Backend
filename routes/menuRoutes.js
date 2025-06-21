@@ -50,19 +50,21 @@ router.put('/menu/:id', upload.single('foto_menu'), async (req, res) => {
   const { nama_menu, deskripsi, harga, kategori } = req.body;
   const id_menu = req.params.id;
 
+  console.log('Request PUT:', { id_menu, body: req.body, file: req.file });
+
   try {
-    const [oldData] = await pool.query('SELECT foto_menu FROM menu WHERE id_menu = ?', [id_menu]);
-    if (oldData.length === 0) {
-      return res.status(404).json({ error: 'Menu tidak ditemukan' });
-    }
+    const [rows] = await pool.query(
+      'SELECT foto_menu FROM menu WHERE id_menu = ?',
+      [id_menu]
+    );
 
-    const oldFoto = oldData[0].foto_menu;
-    let newFoto = oldFoto;
+    if (rows.length === 0) return res.status(404).json({ error: 'Menu tidak ditemukan' });
 
+    let newFoto = rows[0].foto_menu;
     if (req.file) {
       newFoto = req.file.filename;
-      if (oldFoto) {
-        const oldPath = path.join(__dirname, '../uploads/', oldFoto);
+      if (rows[0].foto_menu) {
+        const oldPath = path.join(__dirname, '../uploads/', rows[0].foto_menu);
         fs.unlink(oldPath, (err) => {
           if (err && err.code !== 'ENOENT') {
             console.warn('Gagal hapus file lama:', err.message);
@@ -72,15 +74,13 @@ router.put('/menu/:id', upload.single('foto_menu'), async (req, res) => {
     }
 
     await pool.query(
-      `UPDATE menu
-       SET nama_menu = ?, deskripsi = ?, harga = ?, kategori = ?, foto_menu = ?
-       WHERE id_menu = ?`,
+      'UPDATE menu SET nama_menu=?, deskripsi=?, harga=?, kategori=?, foto_menu=? WHERE id_menu=?',
       [nama_menu, deskripsi, harga, kategori, newFoto, id_menu]
     );
 
     res.json({ success: true });
-  } catch (err) {
-    console.error('Error saat update menu:', err);
+  } catch (error) {
+    console.error('Error saat update menu:', error);
     res.status(500).send('Internal Server Error');
   }
 });
