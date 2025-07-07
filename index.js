@@ -109,11 +109,19 @@ app.get('/orders', async (req, res) => {
         o.nama_user,
         o.total_pesanan,
         o.status,
+        o.created_at,
         oi.nama_produk,
         oi.jumlah
       FROM orders o
       JOIN order_items oi ON o.id_order = oi.id_order
-      ORDER BY o.id_order DESC
+      ORDER BY 
+        CASE 
+          WHEN o.status = 'pending' THEN 1
+          WHEN o.status = 'canceled' THEN 2
+          WHEN o.status = 'paid' THEN 3
+          ELSE 4
+        END,
+        o.created_at DESC
     `);
     res.json(results);
   } catch (err) {
